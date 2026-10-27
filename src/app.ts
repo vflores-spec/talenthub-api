@@ -7,6 +7,10 @@ import { errorHandler, notFoundHandler } from './shared/httpErrorHandlers';
 import { PostgresVacancyRepository } from './modules/vacancies/adapters/persistence/PostgresVacancyRepository';
 import { VacancyRepository } from './modules/vacancies/ports/VacancyRepository';
 import { createPostgresPool } from './shared/database/postgresPool';
+import { createCompanyRouter } from './modules/companies/adapters/http/companyRoutes';
+import { InMemoryCompanyRepository } from './modules/companies/adapters/persistence/InMemoryCompanyRepository';
+import { CompanyService } from './modules/companies/application/CompanyService';
+import { CompanyRepository } from './modules/companies/ports/CompanyRepository';
 
 const app = express();
 
@@ -21,13 +25,16 @@ const samplesVacancies = [
 const vacancyRepository: VacancyRepository = process.env.DATABASE_URL
     ? new PostgresVacancyRepository(createPostgresPool(process.env.DATABASE_URL))
     : new InMemoryVacancyRepository(samplesVacancies);
+console.log(`Vacancies persistences: ${process.env.DATABASE_URL ? 'PostgreSQL' : 'In memory'}`);
 
 
 //2) Servicio (casos de uso)
 const vancacyService = new VancacyService(vacancyRepository);
+const companyRepository = new CompanyService(new InMemoryCompanyRepository());
 
 //3) Rutas: se le entrega el servicio y se monta bajo el prefijo /vacancies
 app.use('/vacancies', createVacancyRouter(vancacyService));
+app.use('/companies', createCompanyRouter(companyRepository));
 
 app.use(notFoundHandler);
 
