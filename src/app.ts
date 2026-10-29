@@ -11,6 +11,8 @@ import { createCompanyRouter } from './modules/companies/adapters/http/companyRo
 import { InMemoryCompanyRepository } from './modules/companies/adapters/persistence/InMemoryCompanyRepository';
 import { CompanyService } from './modules/companies/application/CompanyService';
 import { CompanyRepository } from './modules/companies/ports/CompanyRepository';
+import { MongoCompanyRepository } from './modules/companies/adapters/persistence/MongoCompanyRepository';
+import { createMongoClient } from './shared/database/mongoClient';
 
 const app = express();
 
@@ -27,14 +29,19 @@ const vacancyRepository: VacancyRepository = process.env.DATABASE_URL
     : new InMemoryVacancyRepository(samplesVacancies);
 console.log(`Vacancies persistences: ${process.env.DATABASE_URL ? 'PostgreSQL' : 'In memory'}`);
 
+//Repositorio: Guardar las companias
+const companyRepository: CompanyRepository = process.env.MONGODB_URI
+    ? new MongoCompanyRepository(createMongoClient(process.env.MONGODB_URI))
+    : new InMemoryCompanyRepository();
+console.log(`Companies persistences: ${process.env.MONGODB_URI ? 'MongoDB' : 'In memory'}`);
 
 //2) Servicio (casos de uso)
 const vancacyService = new VancacyService(vacancyRepository);
-const companyRepository = new CompanyService(new InMemoryCompanyRepository());
+const companyService = new CompanyService(companyRepository);
 
 //3) Rutas: se le entrega el servicio y se monta bajo el prefijo /vacancies
 app.use('/vacancies', createVacancyRouter(vancacyService));
-app.use('/companies', createCompanyRouter(companyRepository));
+app.use('/companies', createCompanyRouter(companyService));
 
 app.use(notFoundHandler);
 
