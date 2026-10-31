@@ -13,6 +13,8 @@ import { CompanyService } from './modules/companies/application/CompanyService';
 import { CompanyRepository } from './modules/companies/ports/CompanyRepository';
 import { MongoCompanyRepository } from './modules/companies/adapters/persistence/MongoCompanyRepository';
 import { createMongoClient } from './shared/database/mongoClient';
+import { PrismaVacancyRepository } from './modules/vacancies/adapters/persistence/PrismaVacancyRepository';
+import { createPrismaClient } from './shared/database/prismaClient';
 
 const app = express();
 
@@ -23,11 +25,26 @@ const samplesVacancies = [
     {id: 2, title: 'Analista de Datos', company:'DataSur', modality: 'híbrido', salary: 1200},
 ];
 
-//Repositorio: Guardando las vacantes
-const vacancyRepository: VacancyRepository = process.env.DATABASE_URL
-    ? new PostgresVacancyRepository(createPostgresPool(process.env.DATABASE_URL))
-    : new InMemoryVacancyRepository(samplesVacancies);
-console.log(`Vacancies persistences: ${process.env.DATABASE_URL ? 'PostgreSQL' : 'In memory'}`);
+//Elige el repositorio de vancantes según las variables de entorno .evn
+const createVacancyRepository = (): {name: string; repository: VacancyRepository} => {
+    const databaseUrl = process.env.DATABASE_URL;
+
+    //Sin DATABASE_URL -> lista en memoria
+    if(!databaseUrl){
+        return {name: 'in memory', repository: new InMemoryVacancyRepository(samplesVacancies)};
+    }
+
+    // Con VACANACIES_ADAPTER = prisma: PostgreSQL a través de Prisma
+    if(process.env.VACANCIES_ADAPTER === 'prisma'){
+        return {name: 'PostgreSQL with Prisma', repository: new PrismaVacancyRepository(createPrismaClient(databaseUrl)),};
+    }
+
+    //Por defecto: PostgreSQL puro
+    return { name: 'PostgreSQL with pg', repository: new PostgresVacancyRepository(createPostgresPool(databaseUrl)),};
+}
+
+const {name: vacanciesAdapterName, repository: vacancyRepository} = createVacancyRepository();
+console.log(`Vacancies persistence: ${vacanciesAdapterName}`);
 
 //Repositorio: Guardar las companias
 const companyRepository: CompanyRepository = process.env.MONGODB_URI
