@@ -22,8 +22,8 @@ const app = express();
 app.use(express.json());
 
 const samplesVacancies = [
-    {id: 1, title: 'Desarrollador Backend', company:'Tech Ander', modality: 'remoto', salary: 800},
-    {id: 2, title: 'Analista de Datos', company:'DataSur', modality: 'híbrido', salary: 1200},
+    {id: 1, title: 'Desarrollador Backend', companyId: 'empresa-1', companyName:'Tech Andes', modality: 'remoto', salary: 800},
+    {id: 2, title: 'Analista de Datos', companyId: 'empresa-2', companyName:'DataSur', modality: 'híbrido', salary: 1200},
 ];
 
 //Elige el repositorio de vancantes según las variables de entorno .evn
