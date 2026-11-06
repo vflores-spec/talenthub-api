@@ -15,6 +15,7 @@ import { MongoCompanyRepository } from './modules/companies/adapters/persistence
 import { createMongoClient } from './shared/database/mongoClient';
 import { PrismaVacancyRepository } from './modules/vacancies/adapters/persistence/PrismaVacancyRepository';
 import { createPrismaClient } from './shared/database/prismaClient';
+import { PrismaCompanyRepository } from './modules/companies/adapters/persistence/PrismaCompanyRepository';
 
 const app = express();
 
@@ -46,11 +47,26 @@ const createVacancyRepository = (): {name: string; repository: VacancyRepository
 const {name: vacanciesAdapterName, repository: vacancyRepository} = createVacancyRepository();
 console.log(`Vacancies persistence: ${vacanciesAdapterName}`);
 
-//Repositorio: Guardar las companias
-const companyRepository: CompanyRepository = process.env.MONGODB_URI
-    ? new MongoCompanyRepository(createMongoClient(process.env.MONGODB_URI))
-    : new InMemoryCompanyRepository();
-console.log(`Companies persistences: ${process.env.MONGODB_URI ? 'MongoDB' : 'In memory'}`);
+
+const createCompanyRepository = (): {name: string; repository: CompanyRepository} =>{
+    const databaseUrl = process.env.DATABASE_URL;
+    const mongodbUri = process.env.MONGODB_URI;
+
+    if(process.env.COMPANIES_ADAPTER === 'prisma' && databaseUrl){
+        return {name: 'PostgreSQL with Prisma', repository: new PrismaCompanyRepository(createPrismaClient(databaseUrl)),};
+    };
+
+    if(!mongodbUri){
+        return {name: 'in memory', repository: new InMemoryCompanyRepository()};
+    }
+
+    //Por defecto: PostgreSQL puro
+    return { name: 'Mongo DB', repository: new MongoCompanyRepository(createMongoClient(mongodbUri))};
+}
+
+const {name: companiesAdapterName, repository: companyRepository} = createCompanyRepository();
+console.log(`Companies persistence: ${companiesAdapterName}`);
+
 
 //2) Servicio (casos de uso)
 const vancacyService = new VancacyService(vacancyRepository);
