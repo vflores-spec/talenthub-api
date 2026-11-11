@@ -4,16 +4,17 @@ import { DomainError } from "../../../shared/DomainError";
 export interface Vacancy {
   id: number;
   title: string;
-  company: string;
+  companyId: string; // clave foránea hacia la tabla de companies
   modality: string;
   salary: number;
+  companyName?: string; //JOIN
 }
 
 //Una nueva vacante: Datos que se espera recibir desde el cliente
-export type NewVacancy = Omit<Vacancy, "id">;
+export type NewVacancy = Omit<Vacancy, "id" | "companyName">;
 
 export const parseNewVacancy = (input: unknown): NewVacancy => {
-  const { title, company, modality, salary } = (input ?? {}) as Record<
+  const { title, companyId, modality, salary } = (input ?? {}) as Record<
     string,
     unknown
   >;
@@ -22,8 +23,8 @@ export const parseNewVacancy = (input: unknown): NewVacancy => {
   if (
     typeof title !== "string" ||
     !title.trim() ||
-    typeof company !== "string" ||
-    !company.trim() ||
+    typeof companyId !== "string" ||
+    !companyId.trim() ||
     typeof modality !== "string" ||
     !modality.trim()
   ) {
@@ -37,6 +38,5 @@ export const parseNewVacancy = (input: unknown): NewVacancy => {
   }
 
   //Devuelve datos limpios
-  return {title: title.trim(), company: company.trim(), modality: modality.trim(), salary: salary};
-
+  return {title: title.trim(), companyId: companyId.trim(), modality: modality.trim(), salary: salary};
 };
