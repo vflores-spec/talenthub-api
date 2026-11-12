@@ -1,4 +1,5 @@
 import express from 'express';
+import cors from 'cors';
 
 import { InMemoryVacancyRepository } from './modules/vacancies/adapters/persistence/InMemoryVacancyRepository';
 import { VancacyService } from './modules/vacancies/application/VacancyService';
@@ -16,6 +17,10 @@ import { createPrismaClient } from './shared/database/prismaClient';
 import { PrismaCompanyRepository } from './modules/companies/adapters/persistence/PrismaCompanyRepository';
 
 const app = express();
+
+//CORS: solo el origen del frontend puede leer las respuestas
+//La dirección sale de cors_origin, si no existe, s eusa la de desarrollo de Vite
+app.use(cors({origin: process.env.CORS_ORIGIN ?? 'http://localhost:5173'}))
 
 app.use(express.json());
 
